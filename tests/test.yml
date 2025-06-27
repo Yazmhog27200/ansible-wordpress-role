@@ -8,26 +8,26 @@
     wordpress_db_password: testpass123
     wordpress_db_root_password: rootpass123
     wordpress_admin_email: test@example.com
-  
+
   pre_tasks:
     - name: Update package cache (Ubuntu/Debian)
-      apt:
+      ansible.builtin.apt:
         update_cache: true
       when: ansible_os_family == "Debian"
-    
+
     - name: Update package cache (Rocky/RHEL)
-      dnf:
+      ansible.builtin.dnf:
         update_cache: true
       when: ansible_os_family == "RedHat"
-    
+
     - name: Install Python MySQL library (Ubuntu/Debian)
-      apt:
+      ansible.builtin.apt:
         name: python3-pymysql
         state: present
       when: ansible_os_family == "Debian"
-    
+
     - name: Install Python MySQL library (Rocky/RHEL)
-      dnf:
+      ansible.builtin.dnf:
         name: python3-PyMySQL
         state: present
       when: ansible_os_family == "RedHat"
@@ -37,23 +37,23 @@
 
   post_tasks:
     - name: Display access information
-      debug:
+      ansible.builtin.debug:
         msg: |
           ================================
           WordPress Installation Complete!
           ================================
-          
+
           Accès au site : http://{{ ansible_default_ipv4.address }}
-          
+
           Configuration de la base de données :
           - Nom de la base : {{ wordpress_db_name }}
           - Utilisateur : {{ wordpress_db_user }}
-          
+
           Prochaines étapes :
           1. Visitez http://{{ ansible_default_ipv4.address }} pour terminer l'installation
           2. Créez votre compte administrateur WordPress
           3. Configurez votre site selon vos besoins
-          
+
           Fichiers importants :
           - Configuration WordPress : /var/www/html/wp-config.php
           - Logs Apache : /var/log/apache2/ (Ubuntu) ou /var/log/httpd/ (Rocky)

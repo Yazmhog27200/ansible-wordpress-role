@@ -7,12 +7,12 @@ galaxy_info:
   company: "Web Hosting Company"
   license: MIT
   min_ansible_version: "2.9"
-  
+
   platforms:
     - name: Ubuntu
       versions:
         - "bionic"
-        - "disco" 
+        - "disco"
         - "focal"
     - name: EL
       versions:
