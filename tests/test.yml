@@ -36,30 +36,25 @@
     - install_wordpress
 
   post_tasks:
-    - name: Verify Apache is running
-      service:
-        name: "{{ 'apache2' if ansible_os_family == 'Debian' else 'httpd' }}"
-        state: started
-      check_mode: true
-      register: apache_status
-    
-    - name: Verify MariaDB is running
-      service:
-        name: "{{ 'mysql' if ansible_os_family == 'Debian' else 'mariadb' }}"
-        state: started
-      check_mode: true
-      register: mariadb_status
-    
-    - name: Verify WordPress files exist
-      stat:
-        path: /var/www/html/wp-config.php
-      register: wp_config
-    
-    - name: Show test results
+    - name: Display access information
       debug:
         msg: |
-          Test Results:
-          - Apache running: {{ apache_status.changed == false }}
-          - MariaDB running: {{ mariadb_status.changed == false }}
-          - WordPress configured: {{ wp_config.stat.exists }}
-          - Installation completed successfully!
+          ================================
+          WordPress Installation Complete!
+          ================================
+          
+          Accès au site : http://{{ ansible_default_ipv4.address }}
+          
+          Configuration de la base de données :
+          - Nom de la base : {{ wordpress_db_name }}
+          - Utilisateur : {{ wordpress_db_user }}
+          
+          Prochaines étapes :
+          1. Visitez http://{{ ansible_default_ipv4.address }} pour terminer l'installation
+          2. Créez votre compte administrateur WordPress
+          3. Configurez votre site selon vos besoins
+          
+          Fichiers importants :
+          - Configuration WordPress : /var/www/html/wp-config.php
+          - Logs Apache : /var/log/apache2/ (Ubuntu) ou /var/log/httpd/ (Rocky)
+          - Configuration Apache : /etc/apache2/sites-available/wordpress.conf (Ubuntu) ou /etc/httpd/conf.d/wordpress.conf (Rocky)
