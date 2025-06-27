@@ -35,7 +35,8 @@
     - start apache
     - start mariadb
 
-- meta: flush_handlers
+- name: Flush handlers to ensure services are started
+  ansible.builtin.meta: flush_handlers
 
 - name: Remove default Apache index page
   ansible.builtin.file:
@@ -51,9 +52,12 @@
     sleep 5
   become: true
   when: ansible_os_family == "Debian"
+  changed_when: false
 
-- name: Start Apache (Ubuntu/Debian containers)  
-  ansible.builtin.shell: service apache2 start
+- name: Start Apache (Ubuntu/Debian containers)
+  ansible.builtin.service:
+    name: apache2
+    state: started
   become: true
   when: ansible_os_family == "Debian"
 
@@ -65,6 +69,8 @@
     fi
   become: true
   when: ansible_os_family == "RedHat"
+  args:
+    creates: /var/lib/mysql/mysql
 
 - name: Fix MariaDB permissions (Rocky/RHEL)
   ansible.builtin.file:
@@ -88,15 +94,17 @@
 - name: Start MariaDB (Rocky/RHEL containers)
   ansible.builtin.shell: |
     mysqld_safe --datadir=/var/lib/mysql --user=mysql &
-    sleep 5  
+    sleep 5
   become: true
   when: ansible_os_family == "RedHat"
+  changed_when: false
 
 - name: Start Apache (Rocky/RHEL containers)
   ansible.builtin.shell: |
     /usr/sbin/httpd -DFOREGROUND &
   become: true
   when: ansible_os_family == "RedHat"
+  changed_when: false
 
 # Configure MariaDB & MySQL root user and database
 - name: Wait for MariaDB to be ready
@@ -108,7 +116,7 @@
 
 # Set root password for MariaDB
 - name: Set MariaDB root password (Ubuntu/Debian)
-  ansible.builtin.mysql_user:
+  community.mysql.mysql_user:
     login_unix_socket: /var/run/mysqld/mysqld.sock
     name: root
     password: "{{ wordpress_db_root_password }}"
@@ -116,10 +124,10 @@
     check_implicit_admin: true
   become: true
   when: ansible_os_family == "Debian"
-  ignore_errors: true
+  failed_when: false
 
 - name: Set MariaDB root password (Rocky/RHEL)
-  ansible.builtin.mysql_user:
+  community.mysql.mysql_user:
     login_unix_socket: /var/lib/mysql/mysql.sock
     name: root
     password: "{{ wordpress_db_root_password }}"
@@ -127,10 +135,10 @@
     check_implicit_admin: true
   become: true
   when: ansible_os_family == "RedHat"
-  ignore_errors: true
+  failed_when: false
 
 - name: Remove anonymous MySQL users
-  ansible.builtin.mysql_user:
+  community.mysql.mysql_user:
     login_user: root
     login_password: "{{ wordpress_db_root_password }}"
     name: ""
@@ -139,7 +147,7 @@
   become: true
 
 - name: Remove MySQL test database
-  ansible.builtin.mysql_db:
+  community.mysql.mysql_db:
     login_user: root
     login_password: "{{ wordpress_db_root_password }}"
     name: test
@@ -147,7 +155,7 @@
   become: true
 
 - name: Create WordPress database
-  ansible.builtin.mysql_db:
+  community.mysql.mysql_db:
     login_user: root
     login_password: "{{ wordpress_db_root_password }}"
     name: "{{ wordpress_db_name }}"
@@ -155,7 +163,7 @@
   become: true
 
 - name: Create WordPress database user
-  ansible.builtin.mysql_user:
+  community.mysql.mysql_user:
     login_user: root
     login_password: "{{ wordpress_db_root_password }}"
     name: "{{ wordpress_db_user }}"
@@ -260,9 +268,10 @@
   when: ansible_os_family == "Debian"
   notify:
     - reload apache
+  changed_when: false
 
 - name: Enable Apache rewrite module (Ubuntu/Debian)
-  ansible.builtin.apache2_module:
+  community.general.apache2_module:
     name: rewrite
     state: present
   become: true
