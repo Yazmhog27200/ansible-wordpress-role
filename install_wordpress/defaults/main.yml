@@ -1,0 +1,35 @@
+---
+# defaults file for install_wordpress
+
+# Database configuration
+wordpress_db_name: wordpress
+wordpress_db_user: wpuser
+wordpress_db_password: wppassword
+wordpress_db_root_password: rootpassword
+
+# WordPress configuration
+wordpress_version: latest
+wordpress_admin_email: admin@localhost
+wordpress_site_title: "WordPress Site"
+wordpress_document_root: /var/www/html
+
+# Apache configuration
+wordpress_apache_port: 80
+
+# System packages
+wordpress_ubuntu_packages:
+  - apache2
+  - php
+  - libapache2-mod-php
+  - php-mysql
+  - mariadb-server
+  - wget
+  - unzip
+
+wordpress_rocky_packages:
+  - httpd
+  - php
+  - php-mysqlnd
+  - mariadb-server
+  - wget
+  - unzip

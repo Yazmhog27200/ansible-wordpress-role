@@ -1,0 +1,45 @@
+---
+# handlers file for install_wordpress
+
+- name: restart apache
+  shell: |
+    if [ "{{ ansible_os_family }}" = "Debian" ]; then
+      service apache2 restart
+    else
+      pkill httpd || true
+      /usr/sbin/httpd -DFOREGROUND &
+    fi
+  become: true
+
+- name: reload apache
+  shell: |
+    if [ "{{ ansible_os_family }}" = "Debian" ]; then
+      service apache2 reload
+    else
+      pkill httpd || true
+      /usr/sbin/httpd -DFOREGROUND &
+    fi
+  become: true
+
+- name: restart mariadb
+  shell: |
+    pkill mysqld || true
+    sleep 2
+    mysqld_safe --datadir=/var/lib/mysql --user=mysql &
+    sleep 5
+  become: true
+
+- name: start mariadb
+  shell: |
+    mysqld_safe --datadir=/var/lib/mysql --user=mysql &
+    sleep 5
+  become: true
+
+- name: start apache
+  shell: |
+    if [ "{{ ansible_os_family }}" = "Debian" ]; then
+      service apache2 start
+    else
+      /usr/sbin/httpd -DFOREGROUND &
+    fi
+  become: true

@@ -1,0 +1,254 @@
+---
+# tasks file for install_wordpress
+
+- name: Update package cache (Ubuntu/Debian)
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+  become: true
+
+- name: Update package cache (Rocky/RHEL)
+  dnf:
+    update_cache: true
+  when: ansible_os_family == "RedHat"
+  become: true
+
+- name: Install required packages (Ubuntu/Debian)
+  apt:
+    name: "{{ wordpress_ubuntu_packages }}"
+    state: present
+    update_cache: true
+  when: ansible_os_family == "Debian"
+  become: true
+  # notify:
+  #   - start apache
+  #   - start mariadb
+
+- name: Install required packages (Rocky/RHEL)
+  dnf:
+    name: "{{ wordpress_rocky_packages }}"
+    state: present
+  when: ansible_os_family == "RedHat"
+  become: true
+  # notify:
+  #   - start apache
+  #   - start mariadb
+
+# - meta: flush_handlers
+
+- name: Remove default Apache index page
+  file:
+    path: "{{ wordpress_document_root }}/index.html"
+    state: absent
+  become: true
+
+# - name: Ensure MariaDB is started and enabled
+#   service:
+#     name: "{{ wordpress_mariadb_service }}"
+#     state: started
+#     enabled: true
+#   become: true
+
+# - name: Ensure Apache is started and enabled
+#   service:
+#     name: "{{ wordpress_apache_service }}"
+#     state: started
+#     enabled: true
+#   become: true
+
+# Install MariaDB and Apache services manually in the container
+- name: Start MariaDB (Ubuntu/Debian containers)
+  shell: |
+    mysqld_safe --datadir=/var/lib/mysql --user=mysql &
+    sleep 5
+  become: true
+  when: ansible_os_family == "Debian"
+
+- name: Start Apache (Ubuntu/Debian containers)  
+  shell: service apache2 start
+  become: true
+  when: ansible_os_family == "Debian"
+
+- name: Start MariaDB (Rocky/RHEL containers)
+  shell: |
+    mysqld_safe --datadir=/var/lib/mysql --user=mysql &
+    sleep 5  
+  become: true
+  when: ansible_os_family == "RedHat"
+
+- name: Start Apache (Rocky/RHEL containers)
+  shell: |
+    /usr/sbin/httpd -DFOREGROUND &
+  become: true
+  when: ansible_os_family == "RedHat"
+
+# Configure MariaDB & MySQL root user and database
+
+- name: Wait for MariaDB to be ready
+  wait_for:
+    port: 3306
+    host: localhost
+    delay: 5
+    timeout: 30
+
+- name: Set MariaDB root password
+  mysql_user:
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: root
+    password: "{{ wordpress_db_root_password }}"
+    host_all: true
+    check_implicit_admin: true
+  become: true
+  ignore_errors: true
+
+- name: Remove anonymous MySQL users
+  mysql_user:
+    login_user: root
+    login_password: "{{ wordpress_db_root_password }}"
+    name: ""
+    host_all: true
+    state: absent
+  become: true
+
+- name: Remove MySQL test database
+  mysql_db:
+    login_user: root
+    login_password: "{{ wordpress_db_root_password }}"
+    name: test
+    state: absent
+  become: true
+
+- name: Create WordPress database
+  mysql_db:
+    login_user: root
+    login_password: "{{ wordpress_db_root_password }}"
+    name: "{{ wordpress_db_name }}"
+    state: present
+  become: true
+
+- name: Create WordPress database user
+  mysql_user:
+    login_user: root
+    login_password: "{{ wordpress_db_root_password }}"
+    name: "{{ wordpress_db_user }}"
+    password: "{{ wordpress_db_password }}"
+    priv: "{{ wordpress_db_name }}.*:ALL"
+    host: localhost
+    state: present
+  become: true
+
+- name: Create temporary directory for WordPress download
+  file:
+    path: /tmp/wordpress
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Download WordPress
+  get_url:
+    url: "https://wordpress.org/latest.zip"
+    dest: /tmp/wordpress/latest.zip
+    mode: '0644'
+  become: true
+
+- name: Extract WordPress archive
+  unarchive:
+    src: /tmp/wordpress/latest.zip
+    dest: /tmp/wordpress
+    remote_src: true
+    creates: /tmp/wordpress/wordpress
+  become: true
+
+- name: Copy WordPress files to document root
+  shell: cp -r /tmp/wordpress/wordpress/* {{ wordpress_document_root }}/
+  become: true
+  args:
+    creates: "{{ wordpress_document_root }}/wp-config-sample.php"
+
+- name: Set ownership of WordPress files
+  file:
+    path: "{{ wordpress_document_root }}"
+    owner: "{{ wordpress_apache_user }}"
+    group: "{{ wordpress_apache_group }}"
+    recurse: true
+  become: true
+
+- name: Set permissions on WordPress directory
+  file:
+    path: "{{ wordpress_document_root }}"
+    mode: '0755'
+    recurse: true
+  become: true
+
+- name: Create wp-config.php from sample
+  copy:
+    src: "{{ wordpress_document_root }}/wp-config-sample.php"
+    dest: "{{ wordpress_document_root }}/wp-config.php"
+    remote_src: true
+    owner: "{{ wordpress_apache_user }}"
+    group: "{{ wordpress_apache_group }}"
+    mode: '0640'
+  become: true
+
+- name: Configure WordPress database settings
+  replace:
+    path: "{{ wordpress_document_root }}/wp-config.php"
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  become: true
+  loop:
+    - { regexp: 'database_name_here', replace: "{{ wordpress_db_name }}" }
+    - { regexp: 'username_here', replace: "{{ wordpress_db_user }}" }
+    - { regexp: 'password_here', replace: "{{ wordpress_db_password }}" }
+    - { regexp: 'localhost', replace: 'localhost' }
+
+- name: Create Apache virtual host configuration (Ubuntu/Debian)
+  template:
+    src: wordpress.conf.j2
+    dest: "{{ wordpress_apache_config_dir }}/wordpress.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  when: ansible_os_family == "Debian"
+  notify:
+    - reload apache
+
+- name: Create Apache virtual host configuration (Rocky/RHEL)
+  template:
+    src: wordpress.conf.j2
+    dest: "{{ wordpress_apache_config_dir }}/wordpress.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  when: ansible_os_family == "RedHat"
+  notify:
+    - reload apache
+
+- name: Enable WordPress site (Ubuntu/Debian)
+  command: a2ensite wordpress.conf
+  become: true
+  when: ansible_os_family == "Debian"
+  notify:
+    - reload apache
+
+- name: Enable Apache rewrite module (Ubuntu/Debian)
+  apache2_module:
+    name: rewrite
+    state: present
+  become: true
+  when: ansible_os_family == "Debian"
+  notify:
+    - reload apache
+
+- name: Clean up temporary files
+  file:
+    path: /tmp/wordpress
+    state: absent
+  become: true
+
+- name: Display WordPress installation message
+  debug:
+    msg: "WordPress has been successfully installed! Visit http://{{ ansible_default_ipv4.address }} to complete the setup."

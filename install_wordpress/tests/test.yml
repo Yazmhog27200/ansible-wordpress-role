@@ -1,0 +1,65 @@
+---
+- name: Test WordPress installation role
+  hosts: all
+  become: true
+  vars:
+    wordpress_db_name: test_wordpress
+    wordpress_db_user: testuser
+    wordpress_db_password: testpass123
+    wordpress_db_root_password: rootpass123
+    wordpress_admin_email: test@example.com
+  
+  pre_tasks:
+    - name: Update package cache (Ubuntu/Debian)
+      apt:
+        update_cache: true
+      when: ansible_os_family == "Debian"
+    
+    - name: Update package cache (Rocky/RHEL)
+      dnf:
+        update_cache: true
+      when: ansible_os_family == "RedHat"
+    
+    - name: Install Python MySQL library (Ubuntu/Debian)
+      apt:
+        name: python3-pymysql
+        state: present
+      when: ansible_os_family == "Debian"
+    
+    - name: Install Python MySQL library (Rocky/RHEL)
+      dnf:
+        name: python3-PyMySQL
+        state: present
+      when: ansible_os_family == "RedHat"
+
+  roles:
+    - install_wordpress
+
+  post_tasks:
+    - name: Verify Apache is running
+      service:
+        name: "{{ 'apache2' if ansible_os_family == 'Debian' else 'httpd' }}"
+        state: started
+      check_mode: true
+      register: apache_status
+    
+    - name: Verify MariaDB is running
+      service:
+        name: "{{ 'mysql' if ansible_os_family == 'Debian' else 'mariadb' }}"
+        state: started
+      check_mode: true
+      register: mariadb_status
+    
+    - name: Verify WordPress files exist
+      stat:
+        path: /var/www/html/wp-config.php
+      register: wp_config
+    
+    - name: Show test results
+      debug:
+        msg: |
+          Test Results:
+          - Apache running: {{ apache_status.changed == false }}
+          - MariaDB running: {{ mariadb_status.changed == false }}
+          - WordPress configured: {{ wp_config.stat.exists }}
+          - Installation completed successfully!

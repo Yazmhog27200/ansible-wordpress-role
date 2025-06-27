@@ -1,0 +1,47 @@
+---
+- name: Install WordPress site with MariaDB database
+  hosts: ubuntu
+  become: true
+  vars:
+    # Configuration personnalisée pour la production
+    wordpress_db_name: production_wordpress
+    wordpress_db_user: wp_admin
+    wordpress_db_password: "{{ vault_wordpress_db_password | default('changeme123') }}"
+    wordpress_db_root_password: "{{ vault_db_root_password | default('rootchangeme123') }}"
+    wordpress_admin_email: admin@monentreprise.com
+    wordpress_site_title: "Mon Site WordPress"
+  
+  pre_tasks:
+    - name: Install required Python MySQL library
+      package:
+        name: "{{ 'python3-pymysql' if ansible_os_family == 'Debian' else 'python3-PyMySQL' }}"
+        state: present
+      become: true
+
+  roles:
+    - install_wordpress
+
+  # post_tasks:
+  #   - name: Display access information
+  #     debug:
+  #       msg: |
+  #         ================================
+  #         WordPress Installation Complete!
+  #         ================================
+          
+  #         Accès au site : http://{{ ansible_default_ipv4.address }}
+          
+  #         Configuration de la base de données :
+  #         - Nom de la base : {{ wordpress_db_name }}
+  #         - Utilisateur : {{ wordpress_db_user }}
+          
+  #         Prochaines étapes :
+  #         1. Visitez http://{{ ansible_default_ipv4.address }} pour terminer l'installation
+  #         2. Créez votre compte administrateur WordPress
+  #         3. Configurez votre site selon vos besoins
+          
+  #         Fichiers importants :
+  #         - Configuration WordPress : /var/www/html/wp-config.php
+  #         - Logs Apache : /var/log/apache2/ (Ubuntu) ou /var/log/httpd/ (Rocky)
+  #         - Configuration Apache : /etc/apache2/sites-available/wordpress.conf (Ubuntu) ou /etc/httpd/conf.d/wordpress.conf (Rocky)
+

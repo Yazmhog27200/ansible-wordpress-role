@@ -1,0 +1,15 @@
+---
+# vars file for install_wordpress
+
+# OS-specific variables
+wordpress_apache_service: "{{ 'apache2' if ansible_os_family == 'Debian' else 'httpd' }}"
+wordpress_apache_user: "{{ 'www-data' if ansible_os_family == 'Debian' else 'apache' }}"
+wordpress_apache_group: "{{ 'www-data' if ansible_os_family == 'Debian' else 'apache' }}"
+wordpress_apache_config_dir: "{{ '/etc/apache2/sites-available' if ansible_os_family == 'Debian' else '/etc/httpd/conf.d' }}"
+wordpress_apache_config_file: "{{ 'wordpress.conf' if ansible_os_family == 'Debian' else 'wordpress.conf' }}"
+
+# Package manager
+wordpress_package_manager: "{{ 'apt' if ansible_os_family == 'Debian' else 'dnf' }}"
+
+# MariaDB service
+wordpress_mariadb_service: "{{ 'mysql' if ansible_os_family == 'Debian' else 'mariadb' }}"

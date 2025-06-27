@@ -1,0 +1,30 @@
+galaxy_info:
+  author: Loic Steve
+  description: Ansible role to install and configure WordPress with MariaDB on Ubuntu and Rocky Linux
+  company: Web Hosting Company
+  license: MIT
+  min_ansible_version: "2.9"
+  
+  platforms:
+    - name: Ubuntu
+      versions:
+        - bionic
+        - focal
+        - jammy
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+
+  galaxy_tags:
+    - wordpress
+    - web
+    - lamp
+    - mariadb
+    - apache
+    - php
+    - cms
+    - blog
+
+# dependencies:
+#   - name: community.mysql
