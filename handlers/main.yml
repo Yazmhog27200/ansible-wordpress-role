@@ -2,7 +2,7 @@
 # handlers file for install_wordpress
 
 - name: restart apache
-  shell: |
+  ansible.builtin.shell: |
     if [ "{{ ansible_os_family }}" = "Debian" ]; then
       service apache2 restart
     else
@@ -12,7 +12,7 @@
   become: true
 
 - name: reload apache
-  shell: |
+  ansible.builtin.shell: |
     if [ "{{ ansible_os_family }}" = "Debian" ]; then
       service apache2 reload
     else
@@ -22,7 +22,7 @@
   become: true
 
 - name: restart mariadb
-  shell: |
+  ansible.builtin.shell: |
     pkill mysqld || true
     sleep 2
     mysqld_safe --datadir=/var/lib/mysql --user=mysql &
@@ -30,13 +30,13 @@
   become: true
 
 - name: start mariadb
-  shell: |
+  ansible.builtin.shell: |
     mysqld_safe --datadir=/var/lib/mysql --user=mysql &
     sleep 5
   become: true
 
 - name: start apache
-  shell: |
+  ansible.builtin.shell: |
     if [ "{{ ansible_os_family }}" = "Debian" ]; then
       service apache2 start
     else
