@@ -1,7 +1,7 @@
 ---
 galaxy_info:
-  author: fyls237
-  namespace: fyls237
+  author: Yazmhog27200
+  namespace: Yazmhog27200
   role_name: install_wordpress
   description: "Ansible role to install and configure WordPress with MariaDB on Ubuntu and Rocky Linux"
   company: "Web Hosting Company"
