@@ -42,7 +42,7 @@
           ================================
           WordPress Installation Complete!
           ================================
-
+## hh
           Accès au site : http://{{ ansible_default_ipv4.address }}
 
           Configuration de la base de données :
