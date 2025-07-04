@@ -1,5 +1,5 @@
 ---
-# defaults file for install_wordpress
+# defaults file for install_wordpress yy
 
 # Database configuration
 wordpress_db_name: wordpress
