@@ -1,5 +1,5 @@
 ---
-# vars file for install_wordpress
+# vars file for install_wordpress yy
 
 # OS-specific variables
 wordpress_apache_service: "{{ 'apache2' if ansible_os_family == 'Debian' else 'httpd' }}"
