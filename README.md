@@ -329,7 +329,7 @@ ansible-galaxy import <github_username> <repo_name>
 
 ## Auteur
 
-Loic Steve - Entreprise d'hébergement de sites web
+Hyppolite Mendy - Entreprise d'hébergement de sites web
 
 ## Support
 
